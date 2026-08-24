@@ -1,5 +1,5 @@
 """
-Configurações da aplicação.
+Configurações centrais do Sentinel Data.
 """
 
 import os
@@ -7,7 +7,7 @@ import os
 
 class Settings:
     """
-    Configurações centrais do Sentinel Data.
+    Armazena as configurações da aplicação.
     """
 
     APP_NAME: str = os.getenv(
@@ -25,9 +25,28 @@ class Settings:
         "postgresql+psycopg://sentinel:sentinel@localhost:5432/sentinel",
     )
 
-    REDIS_URL: str = os.getenv(
-        "REDIS_URL",
-        "redis://localhost:6379/0",
+    # Endereço do Kafka.
+    KAFKA_BOOTSTRAP_SERVERS: str = os.getenv(
+        "KAFKA_BOOTSTRAP_SERVERS",
+        "kafka:9092",
+    )
+
+    # Topic principal dos eventos.
+    KAFKA_EVENTS_TOPIC: str = os.getenv(
+        "KAFKA_EVENTS_TOPIC",
+        "events.raw",
+    )
+
+    # Topic para eventos que falharam.
+    KAFKA_DLQ_TOPIC: str = os.getenv(
+        "KAFKA_DLQ_TOPIC",
+        "events.dlq",
+    )
+
+    # Grupo responsável pelo processamento.
+    KAFKA_CONSUMER_GROUP: str = os.getenv(
+        "KAFKA_CONSUMER_GROUP",
+        "sentinel-event-processors",
     )
 
 

@@ -1,8 +1,5 @@
 services:
 
-  # =========================
-  # API
-  # =========================
   api:
     build: .
 
@@ -27,6 +24,10 @@ services:
 
       KAFKA_EVENTS_TOPIC: events.raw
 
+      KAFKA_PROCESSED_TOPIC: events.processed
+
+      KAFKA_INVALID_TOPIC: events.invalid
+
       KAFKA_DLQ_TOPIC: events.dlq
 
       KAFKA_CONSUMER_GROUP: sentinel-event-processors
@@ -36,13 +37,10 @@ services:
       - kafka
 
 
-  # =========================
-  # KAFKA CONSUMER
-  # =========================
-  consumer:
+  processor:
     build: .
 
-    container_name: sentinel-consumer
+    container_name: sentinel-processor
 
     command: >
       python
@@ -57,6 +55,10 @@ services:
 
       KAFKA_EVENTS_TOPIC: events.raw
 
+      KAFKA_PROCESSED_TOPIC: events.processed
+
+      KAFKA_INVALID_TOPIC: events.invalid
+
       KAFKA_DLQ_TOPIC: events.dlq
 
       KAFKA_CONSUMER_GROUP: sentinel-event-processors
@@ -66,9 +68,6 @@ services:
       - kafka
 
 
-  # =========================
-  # POSTGRESQL
-  # =========================
   postgres:
     image: postgres:16
 
@@ -86,24 +85,16 @@ services:
       - sentinel_postgres_data:/var/lib/postgresql/data
 
 
-  # =========================
-  # ZOOKEEPER
-  # =========================
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.1
 
     container_name: sentinel-zookeeper
 
     environment:
-
       ZOOKEEPER_CLIENT_PORT: 2181
-
       ZOOKEEPER_TICK_TIME: 2000
 
 
-  # =========================
-  # KAFKA
-  # =========================
   kafka:
     image: confluentinc/cp-kafka:7.6.1
 
@@ -119,8 +110,7 @@ services:
 
       KAFKA_BROKER_ID: 1
 
-      KAFKA_ZOOKEEPER_CONNECT:
-        zookeeper:2181
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
 
       KAFKA_ADVERTISED_LISTENERS:
         PLAINTEXT://kafka:9092

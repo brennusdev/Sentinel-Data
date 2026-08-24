@@ -5,6 +5,7 @@ services:
   # =========================
   api:
     build: .
+
     container_name: sentinel-api
 
     command: >
@@ -19,35 +20,50 @@ services:
     environment:
       APP_NAME: Sentinel Data
       ENVIRONMENT: development
+
       DATABASE_URL: postgresql+psycopg://sentinel:sentinel@postgres:5432/sentinel
-      REDIS_URL: redis://redis:6379/0
+
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+      KAFKA_EVENTS_TOPIC: events.raw
+
+      KAFKA_DLQ_TOPIC: events.dlq
+
+      KAFKA_CONSUMER_GROUP: sentinel-event-processors
 
     depends_on:
       - postgres
-      - redis
+      - kafka
 
 
   # =========================
-  # WORKER
+  # KAFKA CONSUMER
   # =========================
-  worker:
+  consumer:
     build: .
 
-    container_name: sentinel-worker
+    container_name: sentinel-consumer
 
     command: >
-      celery
-      -A app.core.celery.celery_app
-      worker
-      --loglevel=info
+      python
+      -m
+      app.streaming.consumer
 
     environment:
+
       DATABASE_URL: postgresql+psycopg://sentinel:sentinel@postgres:5432/sentinel
-      REDIS_URL: redis://redis:6379/0
+
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+      KAFKA_EVENTS_TOPIC: events.raw
+
+      KAFKA_DLQ_TOPIC: events.dlq
+
+      KAFKA_CONSUMER_GROUP: sentinel-event-processors
 
     depends_on:
       - postgres
-      - redis
+      - kafka
 
 
   # =========================
@@ -71,22 +87,55 @@ services:
 
 
   # =========================
-  # REDIS
+  # ZOOKEEPER
   # =========================
-  redis:
-    image: redis:7-alpine
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
 
-    container_name: sentinel-redis
+    container_name: sentinel-zookeeper
+
+    environment:
+
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+      ZOOKEEPER_TICK_TIME: 2000
+
+
+  # =========================
+  # KAFKA
+  # =========================
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+
+    container_name: sentinel-kafka
+
+    depends_on:
+      - zookeeper
 
     ports:
-      - "6379:6379"
+      - "9092:9092"
 
-    volumes:
-      - sentinel_redis_data:/data
+    environment:
+
+      KAFKA_BROKER_ID: 1
+
+      KAFKA_ZOOKEEPER_CONNECT:
+        zookeeper:2181
+
+      KAFKA_ADVERTISED_LISTENERS:
+        PLAINTEXT://kafka:9092
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP:
+        PLAINTEXT:PLAINTEXT
+
+      KAFKA_INTER_BROKER_LISTENER_NAME:
+        PLAINTEXT
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
 
 
 volumes:
 
   sentinel_postgres_data:
-
-  sentinel_redis_data:

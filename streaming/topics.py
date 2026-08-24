@@ -1,12 +1,19 @@
 """
-Definição dos tópicos Kafka utilizados
-pelo Sentinel Data.
+Tópicos Kafka utilizados pelo Sentinel Data.
 """
 
 from app.core.config import settings
 
 
-EVENTS_TOPIC = settings.KAFKA_EVENTS_TOPIC
+RAW_EVENTS_TOPIC = settings.KAFKA_EVENTS_TOPIC
+
+PROCESSED_EVENTS_TOPIC = (
+    settings.KAFKA_PROCESSED_TOPIC
+)
+
+INVALID_EVENTS_TOPIC = (
+    settings.KAFKA_INVALID_TOPIC
+)
 
 DLQ_TOPIC = settings.KAFKA_DLQ_TOPIC
 

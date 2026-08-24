@@ -15,8 +15,10 @@ RUN pip install --no-cache-dir \
     pydantic \
     alembic \
     kafka-python \
+    polars \
     pytest \
-    httpx
+    httpx \
+    ruff
 
 EXPOSE 8000
 

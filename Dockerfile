@@ -14,8 +14,7 @@ RUN pip install --no-cache-dir \
     psycopg[binary] \
     pydantic \
     alembic \
-    celery \
-    redis \
+    kafka-python \
     pytest \
     httpx
 

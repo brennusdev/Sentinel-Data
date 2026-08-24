@@ -1,81 +1,117 @@
 """
-Consumer principal do Sentinel Data.
+Consumer responsável por consumir eventos
+e executar o pipeline de processamento.
 """
 
-from app.core.database import SessionLocal
-from repositories.event_repository import get_event
-from streaming.consumer import create_consumer
+import json
+
+from kafka import KafkaConsumer, KafkaProducer
+
+from app.core.config import settings
+from processing.pipeline import (
+    process_event,
+)
 
 
-def process_message(
-    message,
+consumer = KafkaConsumer(
+    settings.KAFKA_EVENTS_TOPIC,
+
+    bootstrap_servers=(
+        settings.KAFKA_BOOTSTRAP_SERVERS
+    ),
+
+    group_id=(
+        settings.KAFKA_CONSUMER_GROUP
+    ),
+
+    auto_offset_reset="earliest",
+
+    enable_auto_commit=False,
+
+    value_deserializer=lambda value: json.loads(
+        value.decode("utf-8")
+    ),
+)
+
+
+producer = KafkaProducer(
+    bootstrap_servers=(
+        settings.KAFKA_BOOTSTRAP_SERVERS
+    ),
+
+    value_serializer=lambda value: json.dumps(
+        value
+    ).encode("utf-8"),
+)
+
+
+def publish_processed_event(
+    result: dict,
 ):
     """
-    Processa uma mensagem recebida do Kafka.
+    Publica o resultado do processamento
+    no tópico apropriado.
     """
 
-    payload = message.value
+    if result["status"] == "processed":
 
-    event_id = payload["id"]
-
-    db = SessionLocal()
-
-    try:
-        event = get_event(
-            db=db,
-            event_id=event_id,
+        producer.send(
+            settings.KAFKA_PROCESSED_TOPIC,
+            value=result,
         )
 
-        if event is None:
-            print(
-                f"Evento {event_id} não encontrado."
-            )
+    else:
 
-            return
-
-        print(
-            f"Processando evento {event_id}: "
-            f"{event.event_type}"
+        producer.send(
+            settings.KAFKA_INVALID_TOPIC,
+            value=result,
         )
 
-        # Aqui futuramente entra o pipeline
-        # de transformação dos dados.
-
-    finally:
-        db.close()
+    producer.flush()
 
 
 def run_consumer():
     """
-    Mantém o consumidor executando continuamente.
+    Loop principal do consumidor.
     """
 
-    consumer = create_consumer()
-
     print(
-        "Sentinel Data Consumer iniciado."
+        "Sentinel Data V4 Processor iniciado."
     )
 
-    try:
+    for message in consumer:
 
-        for message in consumer:
+        try:
 
-            try:
+            event = message.value
 
-                process_message(message)
+            print(
+                f"Processando evento "
+                f"{event.get('id')}"
+            )
 
-                # Confirma que a mensagem foi processada.
-                consumer.commit()
+            result = process_event(
+                event
+            )
 
-            except Exception as error:
+            publish_processed_event(
+                result
+            )
 
-                print(
-                    f"Erro ao processar mensagem: {error}"
-                )
+            consumer.commit()
 
-    finally:
+            print(
+                f"Evento {event.get('id')} "
+                f"processado: "
+                f"{result['status']}"
+            )
 
-        consumer.close()
+        except Exception as error:
+
+            print(
+                f"Erro no processamento: "
+                f"{error}"
+            )
 
 
 if __name__ == "__main__":

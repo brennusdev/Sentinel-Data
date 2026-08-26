@@ -1,8 +1,21 @@
 """
-Endpoint responsável pelo health check da aplicação.
+Endpoints de saúde da aplicação.
 """
 
-from fastapi import APIRouter
+from fastapi import (
+    APIRouter,
+    Depends,
+)
+
+from sqlalchemy.orm import Session
+
+from app.core.database import (
+    get_db,
+)
+
+from observability.health import (
+    check_database,
+)
 
 
 router = APIRouter(
@@ -11,13 +24,31 @@ router = APIRouter(
 )
 
 
-@router.get("/")
-def health_check():
-    """
-    Verifica se a API está funcionando.
-    """
+@router.get("/live")
+def liveness():
 
     return {
-        "status": "healthy",
-        "service": "sentinel-data",
+        "status": "alive",
+    }
+
+
+@router.get("/ready")
+def readiness(
+    db: Session = Depends(get_db),
+):
+
+    database_available = (
+        check_database(db)
+    )
+
+    if not database_available:
+
+        return {
+            "status": "not_ready",
+            "database": "down",
+        }
+
+    return {
+        "status": "ready",
+        "database": "up",
     }

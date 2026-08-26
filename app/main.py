@@ -1,38 +1,44 @@
 """
-Ponto de entrada principal do Sentinel Data.
+Aplicação principal do Sentinel Data.
 """
 
 from fastapi import FastAPI
 
-from app.api.routes.events import router as events_router
-from app.api.routes.health import router as health_router
-from app.core.config import settings
+from app.api.routes.analytics import (
+    router as analytics_router,
+)
 
-
-# Criação da aplicação FastAPI.
-app = FastAPI(
-    title=settings.APP_NAME,
-    description=(
-        "Plataforma de ingestão e análise "
-        "de eventos em tempo real."
-    ),
-    version="1.0.0",
+from app.api.routes.events import (
+    router as events_router,
 )
 
 
-# Registro das rotas.
-app.include_router(health_router)
-app.include_router(events_router)
+app = FastAPI(
+    title="Sentinel Data",
+    version="5.0.0",
+    description=(
+        "Real-time data ingestion, "
+        "processing and analytics platform."
+    ),
+)
 
 
-@app.get("/")
-def root():
+app.include_router(
+    events_router
+)
+
+app.include_router(
+    analytics_router
+)
+
+
+@app.get("/health")
+def health():
     """
-    Endpoint inicial da aplicação.
+    Health check da aplicação.
     """
 
     return {
-        "application": settings.APP_NAME,
-        "version": "1.0.0",
-        "status": "running",
+        "status": "healthy",
+        "version": "5.0.0",
     }

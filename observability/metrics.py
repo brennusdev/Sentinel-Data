@@ -31,3 +31,7 @@ RECOVERY_EVENTS = Counter(
     "sentinel_recovery_events_total",
     "Eventos de recuperação do sistema",
 )
+DEPLOYMENT_INFO = Gauge(
+    "sentinel_deployment_info",
+    "Informações da versão atualmente implantada",
+)

@@ -35,3 +35,19 @@ DEPLOYMENT_INFO = Gauge(
     "sentinel_deployment_info",
     "Informações da versão atualmente implantada",
 )
+AUTHENTICATION_FAILURES = Counter(
+    "sentinel_authentication_failures_total",
+    "Número de falhas de autenticação",
+)
+
+
+AUTHORIZATION_FAILURES = Counter(
+    "sentinel_authorization_failures_total",
+    "Número de falhas de autorização",
+)
+
+
+RATE_LIMIT_BLOCKS = Counter(
+    "sentinel_rate_limit_blocks_total",
+    "Número de requisições bloqueadas",
+)

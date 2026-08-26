@@ -1,3 +1,16 @@
+resource "docker_image" "sentinel" {
+
+  name = "sentinel-data:latest"
+
+  build {
+
+    context = "../.."
+
+    dockerfile = "docker/Dockerfile"
+  }
+}
+
+
 resource "docker_container" "sentinel_api" {
 
   name = "sentinel-api"
@@ -15,15 +28,4 @@ resource "docker_container" "sentinel_api" {
 
     "APP_ENV=production"
   ]
-}
-resource "docker_image" "sentinel" {
-
-  name = "sentinel-data:latest"
-
-  build {
-
-    context = "../.."
-
-    dockerfile = "docker/Dockerfile"
-  }
 }

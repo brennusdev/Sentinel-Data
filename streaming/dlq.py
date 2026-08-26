@@ -3,6 +3,8 @@ Dead Letter Queue.
 
 Eventos que não podem ser processados após
 todas as tentativas são enviados para a DLQ.
+Controle de tentativas de processamento.
+Política de retry com exponential backoff.
 """
 
 import json
@@ -16,32 +18,10 @@ producer = KafkaProducer(
     bootstrap_servers=(
         settings.KAFKA_BOOTSTRAP_SERVERS
     ),
+MAX_RETRIES = 3
 
     value_serializer=lambda value: json.dumps(
         value
     ).encode("utf-8"),
 )
-
-
-def send_to_dlq(
-    event: dict,
-    error: str,
-):
-    """
-    Envia um evento problemático para a DLQ.
-    """
-
-    payload = {
-        "event": event,
-
-        "error": error,
-
-        "reason": "processing_failed",
-    }
-
-    producer.send(
-        settings.KAFKA_DLQ_TOPIC,
-        value=payload,
-    )
-
-    producer.flush()
+MAX_RETRIES = 5

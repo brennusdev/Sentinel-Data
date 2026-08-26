@@ -1,72 +1,106 @@
 """
-Worker de processamento do Sentinel Data.
+Consumer Kafka do Sentinel Data.
 
-Múltiplas instâncias deste processo podem
-ser executadas simultaneamente utilizando
-o mesmo consumer group.
+Responsável por consumir eventos do Kafka
+em lotes e encaminhá-los para o pipeline
+de processamento.
 """
-
-import json
 
 from kafka import KafkaConsumer
 
 from app.core.config import settings
+from processing.pipeline import process_batch
 
-from processing.pipeline import (
-    process_event,
+
+# ============================================================
+# KAFKA CONSUMER
+# ============================================================
+
+consumer = KafkaConsumer(
+
+    # Tópico que será consumido.
+    settings.KAFKA_EVENTS_TOPIC,
+
+    # Endereço dos brokers Kafka.
+    bootstrap_servers=(
+        settings.KAFKA_BOOTSTRAP_SERVERS
+    ),
+
+    # Grupo responsável pelo processamento.
+    group_id=(
+        settings.KAFKA_CONSUMER_GROUP
+    ),
+
+    # ========================================================
+    # CONTROLE DE BATCH
+    # ========================================================
+    #
+    # O consumer poderá receber até 500
+    # registros em uma chamada de poll.
+    #
+    max_poll_records=500,
+
+    # ========================================================
+    # COMMIT MANUAL
+    # ========================================================
+    #
+    # O offset não será confirmado
+    # automaticamente.
+    #
+    enable_auto_commit=False,
 )
 
 
-def create_consumer():
+def consume_messages():
     """
-    Cria um consumer pertencente ao
-    consumer group do Sentinel.
+    Consome mensagens do Kafka em lotes.
     """
 
-    return KafkaConsumer(
+    while True:
 
-        settings.KAFKA_EVENTS_TOPIC,
+        # ====================================================
+        # BUSCA UM LOTE DE MENSAGENS
+        # ====================================================
 
-        bootstrap_servers=(
-            settings.KAFKA_BOOTSTRAP_SERVERS
-        ),
+        messages = consumer.poll(
 
-        group_id=(
-            settings.KAFKA_CONSUMER_GROUP
-        ),
+            # Aguarda até 1 segundo
+            # por novas mensagens.
+            timeout_ms=1000,
 
-        enable_auto_commit=False,
-
-        auto_offset_reset="earliest",
-
-        max_poll_records=100,
-
-        value_deserializer=lambda value:
-            json.loads(
-                value.decode("utf-8")
-            ),
-    )
-
-
-def run():
-
-    consumer = create_consumer()
-
-    for message in consumer:
-
-        event = message.value
-
-        result = process_event(
-            event
+            # Limita o tamanho do lote.
+            max_records=500,
         )
 
-        print(
-            f"Processed: {result}"
-        )
+        # ====================================================
+        # PROCESSAMENTO DOS LOTES
+        # ====================================================
 
-        consumer.commit()
+        for topic_partition, records in (
+            messages.items()
+        ):
 
+            # Converte as mensagens Kafka
+            # em uma lista de eventos Python.
+            events = [
+                message.value
+                for message in records
+            ]
 
-if __name__ == "__main__":
+            # =================================================
+            # PROCESSA O BATCH
+            # =================================================
 
-    run()
+            results = process_batch(
+                events
+            )
+
+            # =================================================
+            # COMMIT DOS OFFSETS
+            # =================================================
+            #
+            # Só confirmamos os offsets depois
+            # do processamento do lote.
+            #
+
+            consumer.commit()

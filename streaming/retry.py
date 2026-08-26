@@ -1,26 +1,26 @@
 """
-Controle de tentativas de processamento.
+Política de retry com exponential backoff.
 """
 
-MAX_RETRIES = 3
+
+MAX_RETRIES = 5
 
 
 def should_retry(
     retry_count: int,
 ) -> bool:
-    """
-    Determina se o evento ainda pode ser
-    processado novamente.
-    """
 
-    return retry_count < MAX_RETRIES
+    return (
+        retry_count
+        < MAX_RETRIES
+    )
 
 
-def next_retry_count(
+def calculate_backoff(
     retry_count: int,
 ) -> int:
     """
-    Incrementa o contador de tentativas.
+    Calcula o atraso em segundos.
     """
 
-    return retry_count + 1
+    return 2 ** retry_count

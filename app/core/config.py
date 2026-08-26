@@ -1,62 +1,35 @@
 """
-Configurações centrais do Sentinel Data V5.
+Configuração central da aplicação.
 """
 
-import os
+from pydantic_settings import (
+    BaseSettings,
+    SettingsConfigDict,
+)
 
 
-class Settings:
-    """
-    Centraliza as configurações da aplicação.
-    """
+class Settings(BaseSettings):
 
-    APP_NAME: str = os.getenv(
-        "APP_NAME",
-        "Sentinel Data",
+    APP_ENV: str = "development"
+
+    DATABASE_URL: str
+
+    KAFKA_BOOTSTRAP_SERVERS: str
+
+    KAFKA_CONSUMER_GROUP: str = (
+        "sentinel-processors"
     )
 
-    ENVIRONMENT: str = os.getenv(
-        "ENVIRONMENT",
-        "development",
-    )
+    SECRET_KEY: str
 
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL",
-        "postgresql+psycopg://sentinel:sentinel@postgres:5432/sentinel",
-    )
+    LOG_LEVEL: str = "INFO"
 
-    # -------------------------
-    # Kafka
-    # -------------------------
 
-    KAFKA_BOOTSTRAP_SERVERS: str = os.getenv(
-        "KAFKA_BOOTSTRAP_SERVERS",
-        "kafka:9092",
-    )
+    model_config = SettingsConfigDict(
 
-    KAFKA_EVENTS_TOPIC: str = os.getenv(
-        "KAFKA_EVENTS_TOPIC",
-        "events.raw",
-    )
+        env_file=".env",
 
-    KAFKA_PROCESSED_TOPIC: str = os.getenv(
-        "KAFKA_PROCESSED_TOPIC",
-        "events.processed",
-    )
-
-    KAFKA_INVALID_TOPIC: str = os.getenv(
-        "KAFKA_INVALID_TOPIC",
-        "events.invalid",
-    )
-
-    KAFKA_DLQ_TOPIC: str = os.getenv(
-        "KAFKA_DLQ_TOPIC",
-        "events.dlq",
-    )
-
-    KAFKA_CONSUMER_GROUP: str = os.getenv(
-        "KAFKA_CONSUMER_GROUP",
-        "sentinel-event-processors",
+        extra="ignore",
     )
 
 

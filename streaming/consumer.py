@@ -1,118 +1,72 @@
 """
-Consumer responsável por consumir eventos
-e executar o pipeline de processamento.
+Worker de processamento do Sentinel Data.
+
+Múltiplas instâncias deste processo podem
+ser executadas simultaneamente utilizando
+o mesmo consumer group.
 """
 
 import json
 
-from kafka import KafkaConsumer, KafkaProducer
+from kafka import KafkaConsumer
 
 from app.core.config import settings
+
 from processing.pipeline import (
     process_event,
 )
 
 
-consumer = KafkaConsumer(
-    settings.KAFKA_EVENTS_TOPIC,
-
-    bootstrap_servers=(
-        settings.KAFKA_BOOTSTRAP_SERVERS
-    ),
-
-    group_id=(
-        settings.KAFKA_CONSUMER_GROUP
-    ),
-
-    auto_offset_reset="earliest",
-
-    enable_auto_commit=False,
-
-    value_deserializer=lambda value: json.loads(
-        value.decode("utf-8")
-    ),
-)
-
-
-producer = KafkaProducer(
-    bootstrap_servers=(
-        settings.KAFKA_BOOTSTRAP_SERVERS
-    ),
-
-    value_serializer=lambda value: json.dumps(
-        value
-    ).encode("utf-8"),
-)
-
-
-def publish_processed_event(
-    result: dict,
-):
+def create_consumer():
     """
-    Publica o resultado do processamento
-    no tópico apropriado.
+    Cria um consumer pertencente ao
+    consumer group do Sentinel.
     """
 
-    if result["status"] == "processed":
+    return KafkaConsumer(
 
-        producer.send(
-            settings.KAFKA_PROCESSED_TOPIC,
-            value=result,
-        )
+        settings.KAFKA_EVENTS_TOPIC,
 
-    else:
+        bootstrap_servers=(
+            settings.KAFKA_BOOTSTRAP_SERVERS
+        ),
 
-        producer.send(
-            settings.KAFKA_INVALID_TOPIC,
-            value=result,
-        )
+        group_id=(
+            settings.KAFKA_CONSUMER_GROUP
+        ),
 
-    producer.flush()
+        enable_auto_commit=False,
 
+        auto_offset_reset="earliest",
 
-def run_consumer():
-    """
-    Loop principal do consumidor.
-    """
+        max_poll_records=100,
 
-    print(
-        "Sentinel Data V4 Processor iniciado."
+        value_deserializer=lambda value:
+            json.loads(
+                value.decode("utf-8")
+            ),
     )
+
+
+def run():
+
+    consumer = create_consumer()
 
     for message in consumer:
 
-        try:
+        event = message.value
 
-            event = message.value
+        result = process_event(
+            event
+        )
 
-            print(
-                f"Processando evento "
-                f"{event.get('id')}"
-            )
+        print(
+            f"Processed: {result}"
+        )
 
-            result = process_event(
-                event
-            )
-
-            publish_processed_event(
-                result
-            )
-
-            consumer.commit()
-
-            print(
-                f"Evento {event.get('id')} "
-                f"processado: "
-                f"{result['status']}"
-            )
-
-        except Exception as error:
-
-            print(
-                f"Erro no processamento: "
-                f"{error}"
-            )
+        consumer.commit()
 
 
 if __name__ == "__main__":
-    run_consumer()
+
+    run()

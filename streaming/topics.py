@@ -1,20 +1,25 @@
 """
-Tópicos Kafka utilizados pelo Sentinel Data.
+Configuração dos tópicos Kafka.
 """
 
-from app.core.config import settings
+TOPICS = {
+    "events.raw": {
+        "partitions": 8,
+        "replication_factor": 1,
+    },
 
+    "events.processed": {
+        "partitions": 8,
+        "replication_factor": 1,
+    },
 
-RAW_EVENTS_TOPIC = settings.KAFKA_EVENTS_TOPIC
+    "events.invalid": {
+        "partitions": 4,
+        "replication_factor": 1,
+    },
 
-PROCESSED_EVENTS_TOPIC = (
-    settings.KAFKA_PROCESSED_TOPIC
-)
-
-INVALID_EVENTS_TOPIC = (
-    settings.KAFKA_INVALID_TOPIC
-)
-
-DLQ_TOPIC = settings.KAFKA_DLQ_TOPIC
-
-CONSUMER_GROUP = settings.KAFKA_CONSUMER_GROUP
+    "events.dlq": {
+        "partitions": 4,
+        "replication_factor": 1,
+    },
+}

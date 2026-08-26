@@ -138,3 +138,41 @@ kafka:
 volumes:
 
   sentinel_postgres_data:
+
+  grafana:
+
+  image: grafana/grafana:11.1.0
+
+  container_name: sentinel-grafana
+
+  ports:
+
+    - "3000:3000"
+
+  depends_on:
+
+    - prometheus
+
+  volumes:
+
+    - grafana_data:/var/lib/grafana
+
+prometheus:
+
+  image: prom/prometheus:v2.53.0
+
+  container_name: sentinel-prometheus
+
+  ports:
+
+    - "9090:9090"
+
+  volumes:
+
+    - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  depends_on:
+
+    - api
+  
+    

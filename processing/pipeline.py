@@ -1,78 +1,115 @@
 """
-Pipeline central de processamento de dados.
+Pipeline principal de processamento do Sentinel Data.
+
+Responsável por coordenar as etapas de processamento
+dos eventos recebidos pelo sistema.
 """
 
-from processing.quality import (
-    calculate_quality_score,
-)
-
-from processing.transformer import (
-    transform_event,
-)
-
-from processing.validator import (
-    validate_event,
-)
+from processing.validator import validate_event
+from processing.transformer import transform_event
+from processing.quality import calculate_quality
 
 
 def process_event(
     event: dict,
 ) -> dict:
     """
-    Executa o pipeline completo.
+    Processa um único evento.
 
     Fluxo:
 
-    Input
-      ↓
-    Validation
-      ↓
-    Transformation
-      ↓
-    Quality
-      ↓
-    Output
+    1. Valida o evento.
+    2. Transforma os dados.
+    3. Calcula a qualidade.
+    4. Retorna o evento processado.
     """
 
-    # ---------------------------
-    # 1. Validation
-    # ---------------------------
+    # ========================================================
+    # 1. VALIDAÇÃO
+    # ========================================================
 
-    is_valid, errors = validate_event(
+    validated_event = validate_event(
         event
     )
 
-    # Calcula a qualidade.
-    quality_score = calculate_quality_score(
-        event,
-        errors,
-    )
+    # Se o evento não for válido,
+    # interrompemos o processamento.
+    if not validated_event:
 
-    # Evento inválido.
-    if not is_valid:
+        raise ValueError(
+            "Evento inválido."
+        )
 
-        return {
-            "status": "invalid",
-            "quality_score": quality_score,
-            "errors": errors,
-            "data": event,
-        }
+    # ========================================================
+    # 2. TRANSFORMAÇÃO
+    # ========================================================
 
-    # ---------------------------
-    # 2. Transformation
-    # ---------------------------
-
-    transformed = transform_event(
+    transformed_event = transform_event(
         event
     )
 
-    # ---------------------------
-    # 3. Resultado
-    # ---------------------------
+    # ========================================================
+    # 3. QUALIDADE
+    # ========================================================
+
+    quality_score = calculate_quality(
+        transformed_event
+    )
+
+    # ========================================================
+    # 4. RESULTADO
+    # ========================================================
 
     return {
-        "status": "processed",
+        **transformed_event,
         "quality_score": quality_score,
-        "errors": [],
-        "data": transformed,
     }
+
+
+def process_batch(
+    events: list[dict],
+) -> list[dict]:
+    """
+    Processa múltiplos eventos em lote.
+
+    Parameters
+    ----------
+    events:
+        Lista de eventos recebidos.
+
+    Returns
+    -------
+    list[dict]
+        Lista de eventos processados.
+    """
+
+    # Lista que armazenará os resultados.
+    results = []
+
+    # Percorre cada evento recebido.
+    for event in events:
+
+        try:
+
+            # Processa individualmente o evento.
+            result = process_event(
+                event
+            )
+
+            # Adiciona o resultado
+            # à lista final.
+            results.append(
+                result
+            )
+
+        except Exception as error:
+
+            # Em uma arquitetura real,
+            # esse erro deverá ser encaminhado
+            # para o sistema de retry/DLQ.
+            print(
+                f"Erro ao processar evento: {error}"
+            )
+
+    # Retorna todos os eventos processados.
+    return results

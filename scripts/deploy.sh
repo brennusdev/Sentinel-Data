@@ -3,19 +3,26 @@
 set -e
 
 
-echo "Starting deployment..."
+echo "====================================="
+echo "Sentinel Data Deployment"
+echo "====================================="
 
 
-echo "Running migrations..."
+echo "[1/3] Running migrations..."
 
 alembic upgrade head
 
 
-echo "Starting services..."
+echo "[2/3] Starting containers..."
 
 docker compose \
     -f docker-compose.production.yml \
     up -d
 
 
-echo "Deployment completed."
+echo "[3/3] Deployment completed."
+
+
+docker compose \
+    -f docker-compose.production.yml \
+    ps

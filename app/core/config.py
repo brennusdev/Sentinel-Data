@@ -1,5 +1,5 @@
 """
-Configurações centrais do Sentinel Data.
+Configurações centrais do Sentinel Data V5.
 """
 
 import os
@@ -7,7 +7,7 @@ import os
 
 class Settings:
     """
-    Armazena configurações da aplicação.
+    Centraliza as configurações da aplicação.
     """
 
     APP_NAME: str = os.getenv(
@@ -22,8 +22,12 @@ class Settings:
 
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL",
-        "postgresql+psycopg://sentinel:sentinel@localhost:5432/sentinel",
+        "postgresql+psycopg://sentinel:sentinel@postgres:5432/sentinel",
     )
+
+    # -------------------------
+    # Kafka
+    # -------------------------
 
     KAFKA_BOOTSTRAP_SERVERS: str = os.getenv(
         "KAFKA_BOOTSTRAP_SERVERS",

@@ -1,0 +1,20 @@
+services:
+
+  api:
+
+    image: sentinel-data:${VERSION}
+
+    healthcheck:
+
+      test:
+        [
+          "CMD",
+          "python",
+          "scripts/health_check.py"
+        ]
+
+      interval: 30s
+
+      timeout: 5s
+
+      retries: 3

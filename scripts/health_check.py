@@ -3,29 +3,37 @@ Health check utilizado pelo container.
 """
 
 import sys
-
 import urllib.request
 
 
-URL = (
+HEALTH_URL = (
     "http://localhost:8000/health/live"
 )
 
 
-try:
+def main() -> None:
+    """
+    Verifica se a API está respondendo.
+    """
 
-    response = urllib.request.urlopen(
-        URL,
-        timeout=3,
-    )
+    try:
 
-    if response.status == 200:
+        response = urllib.request.urlopen(
+            HEALTH_URL,
+            timeout=3,
+        )
 
-        sys.exit(0)
+        if response.status == 200:
 
-except Exception:
+            sys.exit(0)
 
-    pass
+    except Exception:
+
+        pass
+
+    sys.exit(1)
 
 
-sys.exit(1)
+if __name__ == "__main__":
+
+    main()

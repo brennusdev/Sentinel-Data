@@ -1,5 +1,5 @@
 """
-Configuração central da aplicação.
+Configurações centrais do Sentinel Data.
 """
 
 from pydantic_settings import (
@@ -9,26 +9,27 @@ from pydantic_settings import (
 
 
 class Settings(BaseSettings):
+    """
+    Configurações carregadas através
+    das variáveis de ambiente.
+    """
 
     APP_ENV: str = "development"
+
+    LOG_LEVEL: str = "INFO"
 
     DATABASE_URL: str
 
     KAFKA_BOOTSTRAP_SERVERS: str
 
-    KAFKA_CONSUMER_GROUP: str = (
-        "sentinel-processors"
-    )
+    KAFKA_EVENTS_TOPIC: str
+
+    KAFKA_CONSUMER_GROUP: str
 
     SECRET_KEY: str
 
-    LOG_LEVEL: str = "INFO"
-
-
     model_config = SettingsConfigDict(
-
         env_file=".env",
-
         extra="ignore",
     )
 

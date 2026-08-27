@@ -1,49 +1,41 @@
 """
-Funções relacionadas aos tokens JWT.
+Sentinel Data
+---------------
+Responsável pelo hashing e validação
+das senhas dos usuários.
 """
 
-from datetime import (
-    datetime,
-    timedelta,
-    timezone,
-)
-
-import jwt
-
-from app.core.config import settings
+from pwdlib import PasswordHash
 
 
-ALGORITHM = "HS256"
+# Cria o objeto responsável pelo hashing.
+#
+# O método recommended() seleciona uma
+# configuração segura recomendada pela biblioteca.
+password_hash = PasswordHash.recommended()
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-
-def create_access_token(
-    subject: str,
-    role: str,
-) -> str:
+def hash_password(password: str) -> str:
     """
-    Cria um access token JWT.
+    Transforma uma senha em um hash seguro.
+
+    A senha original nunca deve ser armazenada
+    diretamente no banco de dados.
     """
 
-    expires_at = (
-        datetime.now(timezone.utc)
-        + timedelta(
-            minutes=ACCESS_TOKEN_EXPIRE_MINUTES
-        )
-    )
+    return password_hash.hash(password)
 
-    payload = {
 
-        "sub": subject,
+def verify_password(
+    password: str,
+    hashed_password: str,
+) -> bool:
+    """
+    Verifica se a senha informada corresponde
+    ao hash armazenado no banco.
+    """
 
-        "role": role,
-
-        "exp": expires_at,
-    }
-
-    return jwt.encode(
-        payload,
-        settings.SECRET_KEY,
-        algorithm=ALGORITHM,
+    return password_hash.verify(
+        password,
+        hashed_password,
     )

@@ -13,7 +13,7 @@ from app.core.database import (
     get_db,
 )
 
-from observability.health import (
+from app.observability.health import (
     check_database,
 )
 

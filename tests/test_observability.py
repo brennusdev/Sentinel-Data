@@ -1,4 +1,4 @@
-from observability.metrics import (
+from app.observability.metrics import (
     EVENTS_PROCESSED,
 )
 
